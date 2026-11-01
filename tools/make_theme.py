@@ -24,7 +24,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from cursorlab.build import ROLE_KEY, load_themes, main as build_main, build_theme, package  # noqa: E402
+from cursorlab.build import ROLE_KEY, build_theme, load_themes, package  # noqa: E402
 from cursorlab.cat import SPRITES  # noqa: E402
 
 # 角色默认热点（沿用像素小猫的手感，可在 hotspot.html 里改）

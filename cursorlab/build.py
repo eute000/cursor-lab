@@ -14,7 +14,7 @@ import shutil
 import sys
 import zipfile
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 from . import cat as catmod
 from .encode import ROLES, ani_bytes, cur_bytes
@@ -127,8 +127,7 @@ def add_rim(im, color=(255, 255, 255, 255), grow=1):
     a = im.split()[3]
     grown = a
     for _ in range(grow):
-        grown = grown.filter(__import__("PIL.ImageFilter", fromlist=["x"]).MaxFilter(3))
-    from PIL import ImageChops
+        grown = grown.filter(ImageFilter.MaxFilter(3))
     ring = ImageChops.subtract(grown, a)
     out = Image.new("RGBA", im.size, color)
     out.putalpha(ring)

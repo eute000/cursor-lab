@@ -3,7 +3,7 @@
 
 import math
 
-from .pixel import K, P, P2, W, Pixel
+from .pixel import K, P, P2, W
 
 
 def rot(pts, deg, cx=16.0, cy=16.0):

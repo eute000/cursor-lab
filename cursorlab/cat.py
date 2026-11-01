@@ -8,10 +8,8 @@
   * 32px 里元素要少而粗，细节多了就糊
 """
 
-import math
-
 from . import shapes
-from .pixel import (CLEAR, G, K, K2, N, P, P2, W, Pixel, orbit)
+from .pixel import CLEAR, K, N, P, P2, W, Pixel, orbit
 
 # 问号（7x10），比 PIL 字体更像素
 QMARK = ["0111100",
