@@ -45,6 +45,10 @@ jobs:
   pages:
     needs: build
     runs-on: ubuntu-latest
+    # 两个 run 同时部署 Pages 会互相打架（第一次就是这样失败的），串行化
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
