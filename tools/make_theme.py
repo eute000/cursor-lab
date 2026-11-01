@@ -21,6 +21,12 @@ import os
 import shutil
 import sys
 
+# Windows 控制台默认 GBK，打印 [ok] 这类字符会崩，统一转 UTF-8
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
@@ -87,7 +93,7 @@ def main():
         raise SystemExit("素材目录里没有认出任何角色（需要 arrow.png 这类命名）")
     missing = [k for k in ROLE_KEY.values() if k not in roles]
     if missing:
-        print("⚠ 缺 %d 个角色，构建会失败：%s" % (len(missing), ", ".join(missing)))
+        print("[!] 缺 %d 个角色，构建会失败：%s" % (len(missing), ", ".join(missing)))
 
     cfg = {
         "name": args.name,
@@ -100,7 +106,7 @@ def main():
     }
     with open(os.path.join(tdir, "theme.json"), "w", encoding="utf-8") as fh:
         json.dump(cfg, fh, ensure_ascii=False, indent=2)
-    print("✓ 写入 themes/%s/theme.json（%d 个角色，%d 张图）" % (args.name, len(roles), copied))
+    print("[ok] 写入 themes/%s/theme.json（%d 个角色，%d 张图）" % (args.name, len(roles), copied))
     print("  热点默认沿用像素小猫，想精确调整：打开 tools/hotspot.html 点一下再回车")
 
     if missing:
@@ -108,7 +114,7 @@ def main():
     theme = load_themes()[args.name]
     outdir = build_theme(theme)
     package(theme, outdir)
-    print("✓ 装到系统：powershell -ExecutionPolicy Bypass -File install.ps1 -Dir out\%s -Name \"%s\""
+    print("[ok] 装到系统：powershell -ExecutionPolicy Bypass -File install.ps1 -Dir out\\%s -Name \"%s\""
           % (args.name, args.name))
     return 0
 
