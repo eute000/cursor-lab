@@ -1,0 +1,12 @@
+# 构建产物
+out/
+dist/
+docs/pixel-cat/
+
+# 本地状态
+backup-cursors.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
