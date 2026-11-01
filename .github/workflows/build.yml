@@ -65,10 +65,10 @@ jobs:
 
       - name: 组装站点（页面 + 真实 .cur 文件）
         run: |
-          mkdir -p site/pixel-cat
+          mkdir -p site/cartoon-cat
           cp docs/index.html site/index.html
-          cp out/pixel-cat/*.cur out/pixel-cat/*.ani site/pixel-cat/
-          cp out/pixel-cat/preview.png site/pixel-cat/preview.png
+          cp out/cartoon-cat/*.cur out/cartoon-cat/*.ani site/cartoon-cat/
+          cp out/cartoon-cat/preview.png site/cartoon-cat/preview.png
           echo "curs.or" > site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3

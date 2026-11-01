@@ -3,7 +3,7 @@
 统一构建器：主题 -> .cur/.ani + 预览图 + zip 发行包。
 
 主题分两种：
-  procedural —— 代码画的（像素小猫就是这个）
+  procedural —— 代码画的（卡通风小黑猫就是这个，见 cartoon.py）
   assets     —— 用图片做的，看 themes/<name>/theme.json
 """
 
@@ -16,7 +16,7 @@ import zipfile
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
-from . import cat as catmod
+from . import cartoon as cartoonmod
 from .encode import ROLES, ani_bytes, cur_bytes
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,22 +41,25 @@ FONT = r"C:\Windows\Fonts\segoeuib.ttf"
 
 
 def _font(size):
-    return ImageFont.truetype(FONT, size) if os.path.exists(FONT) else ImageFont.load_default()
+    if os.path.exists(FONT):
+        return ImageFont.truetype(FONT, size)
+    return ImageFont.load_default()
 
 
 # ------------------------------------------------------------------ 主题
 class ProceduralTheme:
     kind = "procedural"
 
-    def __init__(self, key, title, sprites, sizes, delay_ms=90):
+    def __init__(self, key, title, sprites, sizes, delay_ms=90, render_fn=None):
         self.key = key
         self.title = title
         self.sprites = sprites
         self.sizes = sizes
         self.delay_ms = delay_ms
+        self._render = render_fn or cartoonmod.render
 
     def render(self, role_key, size, frame=0):
-        return catmod.render(role_key, size, frame)
+        return self._render(role_key, size, frame)
 
     def hotspot(self, role_key):
         return self.sprites[role_key]["hot"]
@@ -106,7 +109,7 @@ class AssetTheme:
 
 
 def cut_background(im, tol=26):
-    """把四周连通的近似纯色背景抠掉（AI 出图常见白底）。"""
+    """把四周的近似纯色背景抠掉（AI 出图常见白底）。"""
     im = im.copy()
     w, h = im.size
     px = im.load()
@@ -137,9 +140,10 @@ def add_rim(im, color=(255, 255, 255, 255), grow=1):
 
 def load_themes():
     themes = {}
-    cat = ProceduralTheme("pixel-cat", "Pixel Cat 像素小猫",
-                          catmod.SPRITES, [32, 64])
-    themes[cat.key] = cat
+    t = ProceduralTheme("cartoon-cat", "Cartoon Cat 卡通小黑猫",
+                        cartoonmod.SPRITES, [32, 48, 64],
+                        render_fn=cartoonmod.render)
+    themes[t.key] = t
     if os.path.isdir(THEMES_DIR):
         for name in sorted(os.listdir(THEMES_DIR)):
             cfg = os.path.join(THEMES_DIR, name, "theme.json")
@@ -189,7 +193,7 @@ def build_theme(theme, verbose=True):
 
 
 def build_sheet(theme, cell=128, gap=8, pad=18, cols=6):
-    items = [(k, v) for k, v in theme.sprites.items()]
+    items = list(theme.sprites.items())
     rows = (len(items) + cols - 1) // cols
     W = pad * 2 + cols * (cell * 2 + gap) + (cols - 1) * gap
     H = pad * 2 + 46 + rows * (cell + 20 + gap)
@@ -217,28 +221,27 @@ def package(theme, outdir):
     """打出发行 zip：光标 + 安装脚本 + 说明，解压双击就能装。"""
     os.makedirs(DIST, exist_ok=True)
     zpath = os.path.join(DIST, "%s.zip" % theme.key)
-    add = ["install.ps1", "uninstall.ps1"]
     readme = """CursorLab · %s
 ==================================================
-1) 右键 install.ps1 -> 用 PowerShell 运行；或者双击 安装.bat
-   （被策略拦了就用：powershell -ExecutionPolicy Bypass -File install.ps1）
-2) 还原：运行 uninstall.ps1（会自动读 install 时写的 backup-cursors.json）
+1) 双击 安装.bat（被策略拦了就用：powershell -ExecutionPolicy Bypass -File install.ps1）
+2) 还原：运行 uninstall.ps1（读 install 时写的 backup-cursors.json）
 3) 装好后在 设置 -> 蓝牙和其他设备 -> 鼠标 -> 其他鼠标设置 -> 指针，
    主题下拉里能看到 "CursorLab %s"
 
-说明：指针文件在 cursors\\ 目录，靠的是用户级注册表 HKCU\\Control Panel\\Cursors，
-不需要管理员权限；如果移动了文件夹，重新运行一次 install.ps1 即可。
+不需要管理员权限（只写 HKCU\\Control Panel\\Cursors）。
+如果移动了文件夹，重新运行一次 install.ps1 即可。
 """ % (theme.title, theme.key)
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for fn in os.listdir(outdir):
             if fn.endswith((".cur", ".ani")):
                 z.write(os.path.join(outdir, fn), "cursors/" + fn)
         z.writestr("README.txt", readme)
-        for fn in add:
+        for fn in ("install.ps1", "uninstall.ps1"):
             src = os.path.join(ROOT, fn)
             if os.path.exists(src):
                 z.write(src, fn)
-        bat = "@echo off\r\npowershell -ExecutionPolicy Bypass -File \"%%~dp0install.ps1\"\r\npause\r\n"
+        bat = ("@echo off\r\n"
+               "powershell -ExecutionPolicy Bypass -File \"%%~dp0install.ps1\"\r\npause\r\n")
         z.writestr("安装.bat", bat)
     print("  zip: dist/%s.zip (%.1f KB)" % (theme.key, os.path.getsize(zpath) / 1024.0))
     return zpath

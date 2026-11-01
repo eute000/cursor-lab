@@ -111,7 +111,7 @@ const ROLES = [
 const ANI = new Set(["wait","appstarting"]);
 document.getElementById("grid").innerHTML = ROLES.map(([k,name,desc]) => `
   <div class="cell">
-    <div class="stage" style="cursor:url('pixel-cat/${k}.${ANI.has(k)?"ani":"cur"}') 4 4, auto">悬停我</div>
+    <div class="stage" style="cursor:url('cartoon-cat/${k}.${ANI.has(k)?"ani":"cur"}') 4 4, auto">悬停我</div>
     <b>${name}</b><i>${k}</i>
   </div>`).join("");
 </script>

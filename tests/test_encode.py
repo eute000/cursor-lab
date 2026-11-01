@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image  # noqa: E402
 
-from cursorlab import cat  # noqa: E402
+from cursorlab import cartoon  # noqa: E402
 from cursorlab.encode import ani_bytes, cur_bytes, dib32  # noqa: E402
 
 
@@ -33,7 +33,7 @@ def _chunks(data):
 
 
 def test_cur_header():
-    data = cur_bytes([cat.render("arrow", s) for s in (32, 64)], (3, 4))
+    data = cur_bytes([cartoon.render("arrow", s) for s in (32, 64)], (3, 4))
     assert data[0:4] == b"\x00\x00\x02\x00", "CUR 魔数/类型位不对"
     assert struct.unpack_from("<H", data, 4)[0] == 2, "层数应为 2"
 
@@ -41,7 +41,7 @@ def test_cur_header():
 def test_cur_layers_and_hotspot():
     sizes = (32, 64)
     hot = (3.0, 4.0)
-    data = cur_bytes([cat.render("arrow", s) for s in sizes], hot)
+    data = cur_bytes([cartoon.render("arrow", s) for s in sizes], hot)
     for i, size in enumerate(sizes):
         w, h, _c, _r, hx, hy, n, off = struct.unpack_from("<BBBBHHII", data, 6 + 16 * i)
         assert (w, h) == (size, size)
@@ -55,14 +55,14 @@ def test_cur_layers_and_hotspot():
 
 
 def test_cur_decodable_by_pillow():
-    data = cur_bytes([cat.render("hand", 32)], (16, 8))
+    data = cur_bytes([cartoon.render("hand", 32)], (16, 8))
     im = Image.open(io.BytesIO(data))
     im.load()
     assert im.size == (32, 32)
 
 
 def test_ani_structure():
-    frames = [cur_bytes([cat.render("wait", 32, f)], (16, 16)) for f in range(8)]
+    frames = [cur_bytes([cartoon.render("wait", 32, f)], (16, 16)) for f in range(8)]
     data = ani_bytes(frames, delay_ms=90)
     assert data[:4] == b"RIFF" and data[8:12] == b"ACON"
     assert struct.unpack_from("<I", data, 4)[0] == len(data) - 8, "RIFF 长度字段不对"
@@ -84,16 +84,16 @@ def test_ani_structure():
 
 
 def test_all_sprites_render():
-    for key in cat.SPRITES:
+    for key in cartoon.SPRITES:
         for size in (32, 64):
-            im = cat.render(key, size, 0)
+            im = cartoon.render(key, size, 0)
             assert im.size == (size, size)
             assert im.mode == "RGBA"
             assert im.getbbox() is not None, "%s 是空图" % key
 
 
 def test_dib_alpha_kept():
-    im = cat.render("arrow", 32)
+    im = cartoon.render("arrow", 32)
     blob = dib32(im)
     w = 32
     xor = blob[40:40 + w * w * 4]

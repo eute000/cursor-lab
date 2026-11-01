@@ -11,7 +11,7 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # 找指针文件：优先 .\cursors（发行包），其次 .\out\pixel-cat（仓库）
 if (-not $Dir) {
-    foreach ($cand in @((Join-Path $root "cursors"), (Join-Path $root "out\pixel-cat"))) {
+    foreach ($cand in @((Join-Path $root "cursors"), (Join-Path $root "out\cartoon-cat"))) {
         if (Test-Path $cand) { $Dir = $cand; break }
     }
 }
