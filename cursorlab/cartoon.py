@@ -173,6 +173,18 @@ def sym_cross(c):
     c.ell(16, 16, 1.9, 1.9, fill=BODY)
 
 
+def draw_ibeam_press(c, f=0):
+    """I 型按下态：I 加粗下沉（像压进纸里）+ 猫低头眯眼握爪"""
+    stamp(c, layer(c.size, sym_ibeam_press))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4, True, 0.0, "press"))
+
+
+def sym_ibeam_press(c):
+    c.line([(6.2, 3.2), (6.2, 10.0)], fill=BODY, w=2.4, caps=False)
+    c.line([(3.8, 3.2), (8.6, 3.2)], fill=BODY, w=2.4)
+    c.line([(3.8, 10.0), (8.6, 10.0)], fill=BODY, w=2.4)
+
+
 def sym_ibeam(c):
     """角标位的 I 型（和 ▷ / ？ 同一个槽位），深色本体 8.7 格高。
 
@@ -200,15 +212,33 @@ def sym_pin(c):
     c.ell(16, 12.0, 2.3, 2.3, fill=CREAM)
 
 
-def sym_paw(c):
-    for x, y, r in ((9.2, 13.6, 2.6), (13.6, 10.4, 2.8),
-                    (18.4, 10.4, 2.8), (22.8, 13.6, 2.6)):
-        c.ell(x, y, r, r, fill=BODY)
-    c.ell(16, 20.6, 6.4, 5.4, fill=BODY)
-    for x, y, r in ((9.2, 13.9, 0.9), (13.7, 10.9, 1.0),
-                    (18.3, 10.9, 1.0), (22.8, 13.9, 0.9)):
-        c.ell(x, y, r, r, fill=CREAM)
-    c.ell(16, 20.6, 2.6, 2.2, fill=CREAM)
+def sym_paw(c, s=1.0, grip=False):
+    """猫爪印；s 用于"抓取"动画的缩放（锚点 16,16）"""
+    def X(x):
+        return 16 + (x - 16) * s
+
+    def Y(y):
+        return 16 + (y - 16) * s
+
+    pull = 0.76 if grip else 1.0          # 握爪时趾垫向掌心收拢
+    grow = 1.07 if grip else 1.0          # 掌垫同时放大一点
+
+    def G(x, y):
+        return (16 + (x - 16) * pull, 20.6 + (y - 20.6) * pull)
+
+    toes = ((9.2, 13.6, 2.6), (13.6, 10.4, 2.8),
+            (18.4, 10.4, 2.8), (22.8, 13.6, 2.6))
+    inner = ((9.2, 13.9, 0.9), (13.7, 10.9, 1.0),
+             (18.3, 10.9, 1.0), (22.8, 13.9, 0.9))
+    for x, y, r in toes:
+        gx, gy = G(x, y)
+        c.ell(X(gx), Y(gy), r * s * (0.92 if grip else 1.0), r * s * (0.92 if grip else 1.0),
+              fill=BODY)
+    c.ell(16, Y(20.6), 6.4 * s * grow, 5.4 * s * grow, fill=BODY)
+    for x, y, r in inner:
+        gx, gy = G(x, y)
+        c.ell(X(gx), Y(gy), r * s, r * s, fill=CREAM)
+    c.ell(16, Y(20.6), 2.6 * s * grow, 2.2 * s * grow, fill=CREAM)
 
 
 def sym_no(c):
@@ -358,7 +388,13 @@ def draw_uparrow(c, f=0):
 
 
 def draw_hand(c, f=0):
+    """手型：平时完全静止"""
     stamp(c, layer(c.size, sym_paw))
+
+
+def draw_hand_press(c, f=0):
+    """按下时的握爪：趾垫收拢 + 掌垫放大（只在按住时出现）"""
+    stamp(c, layer(c.size, sym_paw, 1.0, True))
 
 
 def draw_pin(c, f=0):
@@ -393,6 +429,8 @@ SPRITES = {
 # 不属于注册表 17 项、由助手程序切换的附加造型
 EXTRA = {
     "arrow_press": dict(fn=draw_arrow_press, hot=(2.3, 2.3), frames=1),
+    "ibeam_press": dict(fn=draw_ibeam_press, hot=(6.2, 6.2), frames=1),
+    "hand_press": dict(fn=draw_hand_press, hot=(16, 10.4), frames=1),
 }
 
 
