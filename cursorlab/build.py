@@ -400,6 +400,10 @@ def main(argv=None):
                 for msg in msgs:
                     print("  [!] %s: %s" % (fn, msg))
             bad += sum(len(m) for m in problems.values())
+            if not problems:
+                print("  [ok] 结构校验通过（%d 个文件）"
+                      % len([f for f in os.listdir(outdir)
+                             if f.endswith((".cur", ".ani"))]))
     if bad:
         print("校验发现 %d 个问题" % bad)
         return 1
