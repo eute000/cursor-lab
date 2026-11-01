@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # 🐾 CursorLab · 鼠标指针工坊
 
@@ -143,6 +143,7 @@ RIFF <size> ACON
 
 1. `.ps1` 文件没有 UTF-8 BOM 时按 ANSI 读，中文注释会把引号吃掉 → 整个脚本语法错误。写脚本一律 `UTF8Encoding($true)`。
 2. `Get-Item HKCU:\...` 返回的注册表键是**只读**打开的，直接 `.SetValue()` 会抛「无法写入到注册表项」。要用 `[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($path, $true)` 或 `CreateSubKey()`。
+3. 注册表「默认值」的名字是**空字符串**，`ConvertFrom-Json` 遇到空属性名会直接报「参数 name 的值无效」。备份时改存成 `__default__`，读的时候用 `JavaScriptSerializer` 更保险（它返回字典，能容纳空键）。
 </details>
 
 ## 目录结构

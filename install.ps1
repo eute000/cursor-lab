@@ -56,9 +56,16 @@ function Read-KeyValues($path) {
 
 # 1. 备份（只在第一次装时备份，避免把已经装上的主题当成"原样"）
 if (-not (Test-Path $backupFile)) {
+    # 注册表默认值的名字是空串，JSON 里存成 __default__，
+    # 否则 PS 5.1 的 ConvertFrom-Json 会因为空属性名直接报错
+    $cursors = Read-KeyValues $curKey
+    if ($cursors.Contains("")) {
+        $cursors["__default__"] = $cursors[""]
+        $cursors.Remove("")
+    }
     $backup = [ordered]@{
         when    = (Get-Date).ToString("s")
-        cursors = Read-KeyValues $curKey
+        cursors = $cursors
         schemes = Read-KeyValues $schemeKey
     }
     ($backup | ConvertTo-Json -Depth 6) | Set-Content -Path $backupFile -Encoding UTF8
