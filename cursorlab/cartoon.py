@@ -8,6 +8,7 @@
 """
 
 import math
+import os
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
@@ -66,8 +67,8 @@ class Canvas:
                    width=max(1, int(round(self.s(w)))))
 
     def text(self, x, y, s, size, fill=BODY, anchor="mm"):
-        font = (ImageFont.truetype(FONT, int(self.s(size))) if
-                __import__("os").path.exists(FONT) else ImageFont.load_default())
+        font = (ImageFont.truetype(FONT, int(self.s(size)))
+                if os.path.exists(FONT) else ImageFont.load_default())
         self.d.text((self.s(x), self.s(y)), s, font=font, fill=fill, anchor=anchor)
 
 
