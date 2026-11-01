@@ -72,16 +72,19 @@ class Canvas:
         self.d.text((self.s(x), self.s(y)), s, font=font, fill=fill, anchor=anchor)
 
 
-def rim(c, color=CREAM, w=1.1):
-    """给整层套 1px 米白外描边。
+def rim(c, color=CREAM, w=1.0):
+    """给整层套外描边（按设计单位精确膨胀，不靠模糊阈值）。
 
-    用「高斯模糊 alpha 再阈值」代替大核 MaxFilter —— 后者在 35×35 核上
-    慢到不可用（17 个造型 × 3 档尺寸要跑几分钟）。
+    之前用「高斯模糊 + 阈值」，实际膨胀出 3px 的白边，把 16.5px 的图形
+    撑成 26px 的"贴纸"—— 用户会觉得"I 型还是那么大"。
+    改成反复用 3×3 MaxFilter 膨胀，每轮正好 1 个画布像素，粗细分毫不差。
     """
     a = c.img.split()[3]
-    grown = a.filter(ImageFilter.GaussianBlur(max(0.8, c.s(w) * 0.60)))
-    band = grown.point(lambda v: 255 if v > 10 else 0)
-    ring = ImageChops.subtract(band, a)
+    passes = max(1, int(round(c.s(w))))          # 设计单位 -> 画布像素
+    grown = a
+    for _ in range(passes):
+        grown = grown.filter(ImageFilter.MaxFilter(3))
+    ring = ImageChops.subtract(grown, a)
     layer = Image.new("RGBA", c.img.size, color[:3] + (0,))
     layer.putalpha(ring)
     out = Image.new("RGBA", c.img.size, (0, 0, 0, 0))
@@ -144,7 +147,7 @@ def cat(c, s=0.72, dx=8.0, dy=7.0, tail=True):
 # ------------------------------------------------------------------ 符号
 def sym_tri(c):
     """左上角空心小三角 ▷（尖端 = 热点）"""
-    c.poly([(1.8, 1.8), (10.6, 5.6), (5.6, 10.6)], fill=None, outline=BODY, w=1.9)
+    c.poly([(2.3, 2.3), (10.9, 6.1), (6.1, 10.9)], fill=None, outline=BODY, w=1.9)
 
 
 def sym_cross(c):
@@ -155,9 +158,14 @@ def sym_cross(c):
 
 
 def sym_ibeam(c):
-    c.line([(16, 5.0), (16, 27.0)], fill=BODY, w=2.0, caps=False)
-    c.line([(11.5, 4.6), (20.5, 4.6)], fill=BODY, w=2.2)
-    c.line([(11.5, 27.4), (20.5, 27.4)], fill=BODY, w=2.2)
+    """I 型：深色本体 14.3 格（杆 9.9→22.1、笔画 2.1），144DPI 实显 21px。
+
+    尺寸迭代史（深色本体）：36 → 21 → 19 → 16 → 18 → 19 → **21px**。
+    用户："再粗一点、加到 21px"——高度和笔画同时加，但只加这一个角色。
+    """
+    c.line([(16, 9.9), (16, 22.1)], fill=BODY, w=2.1, caps=False)
+    c.line([(12.5, 9.9), (19.5, 9.9)], fill=BODY, w=2.1)
+    c.line([(12.5, 22.1), (19.5, 22.1)], fill=BODY, w=2.1)
 
 
 def sym_pen(c):
@@ -194,8 +202,8 @@ def sym_no(c):
 
 
 def sym_help(c):
-    c.ell(16, 16, 9.8, 9.8, fill=None, outline=BODY, w=1.9)
-    c.text(16, 15.6, "?", 15.0, fill=BODY)
+    """角标位的手写感问号（不要圆框，照箭头版式）"""
+    c.text(6.4, 6.2, "?", 10.0, fill=BODY)
 
 
 def double_arrow(c, deg=0):
@@ -226,8 +234,22 @@ def sym_spinner(c, f, r=11.4, w=2.0, cx=16, cy=16):
         c.ell(cx + r * math.cos(a), cy + r * math.sin(a), w / 2.0, w / 2.0, fill=BODY)
 
 
+def sym_cycle(c, f, cx=6.6, cy=6.6, r=5.8, w=1.8, head=3.3):
+    """带箭头的圆环箭头（转圈/加载感）：110° 缺口 + 三角箭头，45°/帧转 8 帧"""
+    start = -60 + f * 45
+    end = start + 265
+    c.arc(cx, cy, r, start, end, fill=BODY, w=w)
+    a = math.radians(end)
+    ex, ey = cx + r * math.cos(a), cy + r * math.sin(a)
+    tx, ty = -math.sin(a), math.cos(a)      # 切向
+    nx, ny = math.cos(a), math.sin(a)       # 径向
+    c.poly([(ex + tx * head, ey + ty * head),
+            (ex + nx * head * 0.60, ey + ny * head * 0.60),
+            (ex - nx * head * 0.60, ey - ny * head * 0.60)], fill=BODY)
+
+
 def sym_spin_small(c, f, cx=23.0, cy=23.0, r=4.4):
-    """角标处的小转圈（appstarting）"""
+    """角标处的小转圈（appstarting 用，尾巴收口）"""
     start = f * 45
     c.arc(cx, cy, r, start, start + 250, fill=BODY, w=1.9)
     for ang in (start, start + 250):
@@ -238,22 +260,25 @@ def sym_spin_small(c, f, cx=23.0, cy=23.0, r=4.4):
 # ------------------------------------------------------------------ 角色
 def draw_arrow(c, f=0):
     stamp(c, layer(c.size, sym_tri))
-    stamp(c, layer(c.size, cat, 0.78, 7.8, 6.2))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4))
 
 
 def draw_help(c, f=0):
     stamp(c, layer(c.size, sym_help))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4))
 
 
 def draw_appstarting(c, f=0):
-    stamp(c, layer(c.size, sym_tri))
-    stamp(c, layer(c.size, cat, 0.64, 4.4, 5.2, False))
-    stamp(c, layer(c.size, sym_spin_small, f, 24.6, 24.2, 4.2))
+    """后台启动：大转圈 + 猫（方案 2：与 wait 对调后）"""
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4))
+    stamp(c, layer(c.size, sym_cycle, f, 7.2, 7.2, 5.0))
 
 
 def draw_wait(c, f=0):
-    stamp(c, layer(c.size, cat, 0.62, 6.1, 5.6, False))
-    stamp(c, layer(c.size, sym_spinner, f, 14.2, 1.7))
+    """系统忙：▷ + 猫 + 右下小转圈（方案 2 对调后，保留小转圈免得和 arrow 撞脸）"""
+    stamp(c, layer(c.size, sym_tri))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4))
+    stamp(c, layer(c.size, sym_cycle, f, 27.0, 26.6, 3.4, 1.55, 2.1))
 
 
 def draw_crosshair(c, f=0):
@@ -287,11 +312,13 @@ def draw_size_we(c, f=0):
 
 
 def draw_size_nwse(c, f=0):
-    stamp(c, layer(c.size, double_arrow, 45))
+    """NW-SE 对轴（↖↘）：屏幕坐标 y 朝下，所以用 -45°"""
+    stamp(c, layer(c.size, double_arrow, -45))
 
 
 def draw_size_nesw(c, f=0):
-    stamp(c, layer(c.size, double_arrow, -45))
+    """NE-SW 对轴（↗↙）：+45°"""
+    stamp(c, layer(c.size, double_arrow, 45))
 
 
 def draw_sizeall(c, f=0):
@@ -315,10 +342,10 @@ def draw_person(c, f=0):
 
 
 SPRITES = {
-    "arrow":       dict(fn=draw_arrow,       hot=(1.8, 1.8), frames=1),
-    "help":        dict(fn=draw_help,        hot=(16, 16),   frames=1),
-    "appstarting": dict(fn=draw_appstarting, hot=(1.8, 1.8), frames=8),
-    "wait":        dict(fn=draw_wait,        hot=(16, 16),   frames=8),
+    "arrow":       dict(fn=draw_arrow,       hot=(2.3, 2.3), frames=1),
+    "help":        dict(fn=draw_help,        hot=(2.8, 2.8), frames=1),
+    "appstarting": dict(fn=draw_appstarting, hot=(16, 16),   frames=8),
+    "wait":        dict(fn=draw_wait,        hot=(2.3, 2.3), frames=8),
     "crosshair":   dict(fn=draw_crosshair,   hot=(16, 16),   frames=1),
     "ibeam":       dict(fn=draw_ibeam,       hot=(16, 16),   frames=1),
     "nwpen":       dict(fn=draw_nwpen,       hot=(3.4, 3.4), frames=1),
