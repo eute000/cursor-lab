@@ -184,6 +184,13 @@ def build_theme(theme, verbose=True):
         theme.render(key, 128, 0).save(os.path.join(pngdir, "%s.png" % key))
         files.append((name, len(data)))
 
+    # 附加造型（不属于 17 项注册表角色，由小助手程序按需切换，如按下态）
+    for key, spec in getattr(cartoonmod, "EXTRA", {}).items():
+        data = cur_bytes([theme.render(key, s, 0) for s in theme.sizes], spec["hot"])
+        with open(os.path.join(outdir, "%s.cur" % key), "wb") as fh:
+            fh.write(data)
+        files.append(("%s.cur" % key, len(data)))
+
     sheet = build_sheet(theme)
     sheet.save(os.path.join(outdir, "preview.png"))
     if verbose:
@@ -240,6 +247,13 @@ def package(theme, outdir):
             src = os.path.join(ROOT, fn)
             if os.path.exists(src):
                 z.write(src, fn)
+        # 点击特效小助手
+        fx = os.path.join(ROOT, "tools", "click_fx.py")
+        if os.path.exists(fx):
+            z.write(fx, "click_fx.py")
+            z.writestr("点击特效.bat",
+                       "@echo off\r\ncd /d \"%~dp0\"\r\n"
+                       "start \"CursorLab click-fx\" /min python click_fx.py\r\n")
         bat = ("@echo off\r\n"
                "powershell -ExecutionPolicy Bypass -File \"%%~dp0install.ps1\"\r\npause\r\n")
         z.writestr("安装.bat", bat)

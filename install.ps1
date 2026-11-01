@@ -81,6 +81,11 @@ $curW = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey("Control Panel\Cursor
 if (-not $curW) { throw "打不开 HKCU\Control Panel\Cursors" }
 foreach ($role in $map.Keys) {
     $file = Join-Path $Dir $map[$role]
+    # 有动画的角色是 .ani 而不是 .cur，自动换扩展名再试一次
+    if (-not (Test-Path $file)) {
+        $alt = [System.IO.Path]::ChangeExtension($file, ".ani")
+        if (Test-Path $alt) { $file = $alt }
+    }
     if (-not (Test-Path $file)) { throw "缺文件: $file" }
     $curW.SetValue($role, $file, [Microsoft.Win32.RegistryValueKind]::String)
     $paths += $file

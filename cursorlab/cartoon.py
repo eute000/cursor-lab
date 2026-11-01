@@ -108,39 +108,55 @@ def stamp(base, sub):
 
 
 # ------------------------------------------------------------------ 小黑猫
-def cat(c, s=0.72, dx=8.0, dy=7.0, tail=True):
-    """参考图里那只黑猫：大头 + 超大白眼 + 小身体 + 细尾巴。"""
+def cat(c, s=0.72, dx=8.0, dy=7.0, tail=True, phase=0.0, pose="normal"):
+    """参考图里那只黑猫。
+
+    phase：-1..1 的相位，驱动尾巴摆动 + 轻微呼吸（arrow 的常驻微动画用）
+    pose ："normal" 或 "press"（按下时低头 + 眯眼 + 握爪）
+    """
     def T(x, y):
         return (dx + x * s, dy + y * s)
 
-    if tail:
-        c.line([T(20.5, 22.0), T(26.5, 22.6), T(29.6, 18.6)], fill=BODY, w=2.4 * s)
+    breathe = phase * 0.20                      # 整只猫上下浮动 0.2 格
+    head_drop = 0.45 if pose == "press" else 0.0
+    dy = dy + breathe
 
-    # 身体 + 两只小爪
+    if tail:
+        sway = phase * 0.55
+        c.line([T(20.5, 22.0), T(26.5, 22.6 + sway * 0.6), T(29.6, 18.6 + sway)],
+               fill=BODY, w=2.4 * s)
+
+    # 身体 + 两只小爪（按下时收成握拳的小圆）
     cx, cy = T(16, 21.6)
     c.ell(cx, cy, 6.6 * s, 6.0 * s, fill=BODY)
-    for px in (12.2, 19.8):
-        cx2, cy2 = T(px, 26.8)
-        c.ell(cx2, cy2, 2.1 * s, 1.8 * s, fill=BODY)
+    if pose == "press":
+        for px in (12.8, 19.2):
+            cx2, cy2 = T(px, 26.3)
+            c.ell(cx2, cy2, 1.5 * s, 1.5 * s, fill=BODY)
+    else:
+        for px in (12.2, 19.8):
+            cx2, cy2 = T(px, 26.8)
+            c.ell(cx2, cy2, 2.1 * s, 1.8 * s, fill=BODY)
 
     # 两只小三角耳（先画，被头盖住底边）
     for sx in (-1, 1):
         c.poly([T(16 + sx * 7.6, 6.6), T(16 + sx * 10.6, 0.8), T(16 + sx * 2.6, 4.6)],
                fill=BODY, outline=LINE, w=1.1 * s)
 
-    # 头
-    cx, cy = T(16, 12.0)
+    # 头（按下时整体下移，像被摸头）
+    cx, cy = T(16, 12.0 + head_drop)
     c.ell(cx, cy, 9.6 * s, 8.6 * s, fill=BODY, outline=LINE, w=1.1 * s)
 
-    # 眼睛：两眼白几乎相触，各占脸宽 1/3 以上
+    # 眼睛：两眼白几乎相触；按下时眯起来
+    eye_ry = 3.2 if pose == "press" else 4.8
     for ex in (12.0, 20.0):
-        cx2, cy2 = T(ex, 12.4)
-        c.ell(cx2, cy2, 3.8 * s, 4.8 * s, fill=WHITE, outline=LINE, w=0.75 * s)
+        cx2, cy2 = T(ex, 12.4 + head_drop)
+        c.ell(cx2, cy2, 3.8 * s, eye_ry * s, fill=WHITE, outline=LINE, w=0.75 * s)
     for ex in (12.3, 19.7):
-        cx2, cy2 = T(ex, 13.2)
-        c.ell(cx2, cy2, 2.1 * s, 3.0 * s, fill=BODY)
+        cx2, cy2 = T(ex, 13.2 + head_drop)
+        c.ell(cx2, cy2, 2.1 * s, min(3.0, eye_ry - 0.6) * s, fill=BODY)
     for ex in (11.1, 18.5):
-        cx2, cy2 = T(ex, 11.5)
+        cx2, cy2 = T(ex, 11.5 + head_drop)
         c.ell(cx2, cy2, 0.95 * s, 0.95 * s, fill=WHITE)
 
 
@@ -257,9 +273,21 @@ def sym_spin_small(c, f, cx=23.0, cy=23.0, r=4.4):
 
 
 # ------------------------------------------------------------------ 角色
+def _phase(f, frames=12):
+    """0..frames-1 -> -1..1 的正弦相位"""
+    return math.sin(2 * math.pi * f / frames)
+
+
 def draw_arrow(c, f=0):
+    """主指针：12 帧常驻微动画（尾巴轻摆 + 呼吸 + 偶尔抖耳朵）"""
     stamp(c, layer(c.size, sym_tri))
-    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4, True, _phase(f)))
+
+
+def draw_arrow_press(c, f=0):
+    """按下态：同一版式，低头 + 眯眼 + 握爪（由 tools/click_fx.py 切换）"""
+    stamp(c, layer(c.size, sym_tri))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4, True, 0.0, "press"))
 
 
 def draw_help(c, f=0):
@@ -342,7 +370,7 @@ def draw_person(c, f=0):
 
 
 SPRITES = {
-    "arrow":       dict(fn=draw_arrow,       hot=(2.3, 2.3), frames=1),
+    "arrow":       dict(fn=draw_arrow,       hot=(2.3, 2.3), frames=12),
     "help":        dict(fn=draw_help,        hot=(2.8, 2.8), frames=1),
     "appstarting": dict(fn=draw_appstarting, hot=(16, 16),   frames=8),
     "wait":        dict(fn=draw_wait,        hot=(2.3, 2.3), frames=8),
@@ -362,8 +390,14 @@ SPRITES = {
 }
 
 
+# 不属于注册表 17 项、由助手程序切换的附加造型
+EXTRA = {
+    "arrow_press": dict(fn=draw_arrow_press, hot=(2.3, 2.3), frames=1),
+}
+
+
 def render(name, size, frame=0):
-    spec = SPRITES[name]
+    spec = SPRITES.get(name) or EXTRA[name]
     c = Canvas(size)
     spec["fn"](c, frame)
     return c.img.resize((size, size), Image.LANCZOS)
