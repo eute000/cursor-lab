@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>CursorLab · 热点标注</title>
+<style>
+  :root { --bg:#15171c; --card:#1e2128; --line:#31353f; --fg:#e8eaf1; --mut:#8f96a6; --hot:#ff4d6d; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:26px 30px 80px; background:var(--bg); color:var(--fg);
+         font:14px/1.6 "Segoe UI","Microsoft YaHei",system-ui,sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  p.sub { color:var(--mut); margin:0 0 18px; font-size:13px; }
+  code { background:#0f1115; padding:1px 6px; border-radius:5px; color:#8fe3ff; }
+  .bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
+  input[type=text] { padding:7px 10px; width:340px; border-radius:8px; border:1px solid var(--line);
+                     background:#0f1115; color:var(--fg); font:inherit; }
+  button { padding:7px 14px; border-radius:8px; border:1px solid var(--line);
+           background:var(--card); color:var(--fg); font:inherit; cursor:pointer; }
+  button:hover { border-color:#8fe3ff; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+  .cell { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center; }
+  canvas { width:128px; height:128px; border-radius:8px; cursor:crosshair;
+           background:repeating-conic-gradient(#2a2e37 0 25%, #22252c 0 50%) 0 0/16px 16px; }
+  .name { font-size:12px; margin-top:6px; color:var(--mut); }
+  .name b { color:var(--fg); font-weight:600; }
+  textarea { width:100%; height:180px; margin-top:18px; padding:12px; border-radius:10px;
+             border:1px solid var(--line); background:#0f1115; color:#9ae6b4;
+             font:12px/1.5 Consolas,monospace; }
+</style>
+</head>
+<body>
+<h1>CursorLab · 热点标注</h1>
+<p class="sub">
+  在图上点一下就是「点击生效点」（热点），坐标按 32 格网格记。点完把下面 JSON 贴进
+  <code>themes/&lt;名字&gt;/theme.json</code> 对应角色的 <code>hot</code>，
+  或者直接用 <code>--hot arrow=2,2</code> 传给 <code>tools/make_theme.py</code>。
+</p>
+
+<div class="bar">
+  <input type="text" id="base" value="../out/pixel-cat/png/">
+  <button id="reload">按这个路径重新加载</button>
+  <button id="copy">复制 JSON</button>
+</div>
+
+<div class="grid" id="grid"></div>
+<textarea id="out" readonly></textarea>
+
+<script>
+const ROLES = ["arrow","help","appstarting","wait","crosshair","ibeam","nwpen","no",
+               "sizens","sizewe","sizenwse","sizenesw","sizeall","uparrow","hand","pin","person"];
+const SIZE = 128, GRID = 32, CELL = SIZE / GRID;
+const state = {};
+const el = id => document.getElementById(id);
+
+function paint(key) {
+  const c = document.querySelector(`canvas[data-key="${key}"]`);
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, SIZE, SIZE);
+  const img = new Image();
+  img.onload = () => { ctx.drawImage(img, 0, 0, SIZE, SIZE); mark(key); };
+  img.onerror = () => { ctx.fillStyle = "#553"; ctx.fillRect(0, 0, SIZE, SIZE); };
+  img.src = el("base").value + key + ".png";
+}
+
+function mark(key) {
+  const c = document.querySelector(`canvas[data-key="${key}"]`);
+  const ctx = c.getContext("2d");
+  if (!state[key]) return;
+  const [x, y] = state[key];
+  const px = x / GRID * SIZE, py = y / GRID * SIZE;
+  ctx.save();
+  ctx.strokeStyle = "#ff4d6d"; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px - 9, py); ctx.lineTo(px + 9, py);
+  ctx.moveTo(px, py - 9); ctx.lineTo(px, py + 9);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  document.querySelector(`.name[data-key="${key}"] b`).textContent =
+    `(${x.toFixed(1)}, ${y.toFixed(1)})`;
+}
+
+function build() {
+  el("grid").innerHTML = ROLES.map(k => `
+    <div class="cell">
+      <canvas data-key="${k}" width="${SIZE}" height="${SIZE}"></canvas>
+      <div class="name" data-key="${k}"><b>—</b> ${k}</div>
+    </div>`).join("");
+
+  ROLES.forEach(k => {
+    const c = document.querySelector(`canvas[data-key="${k}"]`);
+    c.addEventListener("click", e => {
+      const r = c.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width * GRID;
+      const y = (e.clientY - r.top) / r.height * GRID;
+      state[k] = [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+      paint(k);
+      dump();
+    });
+    paint(k);
+  });
+  dump();
+}
+
+function dump() {
+  const o = {};
+  for (const k of ROLES) if (state[k]) o[k] = state[k];
+  el("out").value = JSON.stringify(o, null, 0);
+}
+
+el("reload").onclick = build;
+el("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText(el("out").value); el("copy").textContent = "已复制 ✓"; }
+  catch (e) { el("out").select(); document.execCommand("copy"); }
+  setTimeout(() => el("copy").textContent = "复制 JSON", 1200);
+};
+build();
+</script>
+</body>
+</html>
