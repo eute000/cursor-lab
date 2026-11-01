@@ -44,8 +44,9 @@ jobs:
 
   pages:
     needs: build
+    # 只在 main 上部署：tag 那次只管发 Release，否则两个 run 抢着部署会互相打架
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # 两个 run 同时部署 Pages 会互相打架（第一次就是这样失败的），串行化
     concurrency:
       group: pages
       cancel-in-progress: false
