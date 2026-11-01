@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
-《一只猫》全片 v2（定稿版）—— 44 镜 / 126.9 秒 / 1920×1080 / 30fps / 无旁白
+銆婁竴鍙尗銆嬪叏鐗?v2锛堝畾绋跨増锛夆€斺€?44 闀?/ 126.9 绉?/ 1920脳1080 / 30fps / 鏃犳梺鐧?
 
-统一规范：
-  * 猫：用户认可的"有色版"（暖棕描边+奶油眼+粉鼻，image-ae62bcf8），
-    统一调色 = 右侧硬光压暗 + bloom 溢光 + 暗角（frame105g 那套）
-  * 排版：左上标题块（中文 + 英文斜体 + 细线）+ 顶部进度线 + 右上角标 + 底部中英字幕
-  * 字体：中文 Noto Sans SC / 英文 Bodoni 斜体
-  * 节奏：每镜 4 拍 ≈ 2.14 秒（产品段 4.28 / 环形 6.4），匀速推进
-  * 音乐：用户提供的 BGM（112.3 BPM），关键处 whoosh / impact
+缁熶竴瑙勮寖锛?
+  * 鐚細鐢ㄦ埛璁ゅ彲鐨?鏈夎壊鐗?锛堟殩妫曟弿杈?濂舵补鐪?绮夐蓟锛宨mage-ae62bcf8锛夛紝
+    缁熶竴璋冭壊 = 鍙充晶纭厜鍘嬫殫 + bloom 婧㈠厜 + 鏆楄锛坒rame105g 閭ｅ锛?
+  * 鎺掔増锛氬乏涓婃爣棰樺潡锛堜腑鏂?+ 鑻辨枃鏂滀綋 + 缁嗙嚎锛? 椤堕儴杩涘害绾?+ 鍙充笂瑙掓爣 + 搴曢儴涓嫳瀛楀箷
+  * 瀛椾綋锛氫腑鏂?Noto Sans SC / 鑻辨枃 Bodoni 鏂滀綋
+  * 鑺傚锛氭瘡闀?4 鎷?鈮?2.14 绉掞紙浜у搧娈?4.28 / 鐜舰 6.4锛夛紝鍖€閫熸帹杩?
+  * 闊充箰锛氱敤鎴锋彁渚涚殑 BGM锛?12.3 BPM锛夛紝鍏抽敭澶?whoosh / impact
 
-用法：python tools/film_v2.py [起点秒] [终点秒]
-产物：E:\deepseek\.tmp\vibe\film_v2.mp4
+鐢ㄦ硶锛歱ython tools/film_v2.py [璧风偣绉抅 [缁堢偣绉抅
+浜х墿锛欵:\deepseek\.tmp\vibe\film_v2.mp4
 """
 import math
 import os
@@ -32,7 +32,7 @@ F_CN = r"C:\Windows\Fonts\NotoSansSC-VF.ttf"
 F_EN_I = r"C:\Windows\Fonts\BOD_I.TTF"
 F_EN = r"C:\Windows\Fonts\BOD_R.TTF"
 F_MONO = r"C:\Windows\Fonts\consola.ttf"
-CAT_SRC = r"E:\deepseek\copylee-image-gen\image-ae62bcf8.png"
+CAT_SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "cat-source.png")
 TOTAL = 126.9
 
 INK = (252, 251, 249)
@@ -55,14 +55,14 @@ def f(p, s):
     return _FONT_CACHE[key]
 
 
-# ---------------------------------------------------------------- 背景
+# ---------------------------------------------------------------- 鑳屾櫙
 yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
 _d = np.sqrt(((xx - W * 0.5) / (W * 0.66)) ** 2 + ((yy - H * 0.46) / (H * 0.66)) ** 2)
 _bg = (np.clip(1 - _d, 0, 1) ** 2.8)[:, :, None] * np.array([18, 18, 22], dtype=np.float32)
 BG = Image.fromarray(np.clip(_bg, 0, 255).astype(np.uint8), "RGB")
 
 
-# ---------------------------------------------------------------- 猫（统一调色）
+# ---------------------------------------------------------------- 鐚紙缁熶竴璋冭壊锛?
 def treat_cat(px=1200):
     im = Image.open(CAT_SRC).convert("RGB")
     im = im.resize((px, int(im.height * px / im.width)), Image.LANCZOS)
@@ -77,7 +77,7 @@ def treat_cat(px=1200):
         ImageFilter.GaussianBlur(30))
     arr = np.clip(arr + np.asarray(bloom, dtype=np.float32) * 0.55, 0, 255)
 
-    # 暗部压零（背景灰块消失）+ 中心椭圆羽化（四周淡出到透明）
+    # 鏆楅儴鍘嬮浂锛堣儗鏅伆鍧楁秷澶憋級+ 涓績妞渾缇藉寲锛堝洓鍛ㄦ贰鍑哄埌閫忔槑锛?
     arr[np.max(arr, axis=2) < 46] = 0
     hh, ww = arr.shape[:2]
     gy, gx = np.mgrid[0:hh, 0:ww].astype(np.float32)
@@ -133,7 +133,7 @@ _ARROW_MASTER = {}
 
 
 def arrow_img(px=420, press=False):
-    # 先渲染一张 640 的主图，逐帧只做 resize（否则连续变化的 px 会每帧重渲染）
+    # 鍏堟覆鏌撲竴寮?640 鐨勪富鍥撅紝閫愬抚鍙仛 resize锛堝惁鍒欒繛缁彉鍖栫殑 px 浼氭瘡甯ч噸娓叉煋锛?
     key = press
     if key not in _ARROW_MASTER:
         _ARROW_MASTER[key] = cartoon.render("arrow_press" if press else "arrow", 640)
@@ -142,7 +142,7 @@ def arrow_img(px=420, press=False):
 
 
 def plain_arrow(px):
-    """经典系统指针（白面 + 细描边），不带头像猫"""
+    """缁忓吀绯荤粺鎸囬拡锛堢櫧闈?+ 缁嗘弿杈癸級锛屼笉甯﹀ご鍍忕尗"""
     base = 512
     im = Image.new("RGBA", (base, base), (0, 0, 0, 0))
     pts = [(150, 88), (150, 356), (222, 286), (286, 408), (338, 382),
@@ -165,7 +165,7 @@ def plain(px):
     return _PLAIN[k]
 
 
-# ---------------------------------------------------------------- 排版
+# ---------------------------------------------------------------- 鎺掔増
 def typo(img, t, cn="", en="", act=None, big=False, sub_y=None):
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
@@ -215,7 +215,7 @@ def grain_and_vignette(img, seed, amt=1.9):
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
 
 
-# ---------------------------------------------------------------- 镜头实现
+# ---------------------------------------------------------------- 闀滃ご瀹炵幇
 def s_arrow_in(img, lt, dur):
     k = min(1.0, lt / 1.0)
     art = plain(430)
@@ -342,7 +342,7 @@ def s_ref(img, lt, dur):
 
 
 def s_words(img, lt, dur):
-    words = ["大眼睛", "通体漆黑", "猫爪"]
+    words = ["澶х溂鐫?, "閫氫綋婕嗛粦", "鐚埅"]
     d = ImageDraw.Draw(img)
     for i, w in enumerate(words):
         t0 = i * 0.55
@@ -358,7 +358,7 @@ def s_words(img, lt, dur):
 def s_version(img, lt, dur, idx):
     k = min(1.0, lt / 1.0)
     d = ImageDraw.Draw(img)
-    # 三个"版本卡"的位置随 idx 高亮
+    # 涓変釜"鐗堟湰鍗?鐨勪綅缃殢 idx 楂樹寒
     for i in range(4):
         x = W * 0.14 + i * (W * 0.18)
         y = H * 0.34
@@ -386,11 +386,11 @@ def s_cmd(img, lt, dur):
     d = ImageDraw.Draw(img)
     box = [W * 0.18, H * 0.32, W * 0.82, H * 0.60]
     d.rounded_rectangle(box, radius=16, fill=(10, 10, 12, 235), outline=(90, 86, 80, 160), width=1)
-    text = "> 我想要一只黑猫，大眼睛，可爱一点"
+    text = "> 鎴戞兂瑕佷竴鍙粦鐚紝澶х溂鐫涳紝鍙埍涓€鐐?
     n = int(min(len(text), lt / dur * len(text) * 1.05))
     d.text((box[0] + 34, box[1] + 40), text[:n], font=f(F_CN, 34), fill=(220, 224, 210, 235))
     if n >= len(text):
-        d.text((box[0] + 34, box[1] + 106), "✓ 收到，我做一版给你看",
+        d.text((box[0] + 34, box[1] + 106), "鉁?鏀跺埌锛屾垜鍋氫竴鐗堢粰浣犵湅",
                font=f(F_CN, 30), fill=(150, 210, 160, 220))
 
 
@@ -469,7 +469,7 @@ def s_press3(img, lt, dur):
     seg = dur / 3
     i = min(2, int(lt / seg))
     names = ["arrow_press", "ibeam_press", "hand_press"]
-    labels = ["按住：眯眼收爪", "打字：笔画变粗", "点链接：爪印握紧"]
+    labels = ["鎸変綇锛氱湳鐪兼敹鐖?, "鎵撳瓧锛氱瑪鐢诲彉绮?, "鐐归摼鎺ワ細鐖嵃鎻＄揣"]
     art = cur_render(names[i], 420)
     img.alpha_composite(art, (W // 2 - art.width // 2, int(H * 0.38) - art.height // 2))
     d = ImageDraw.Draw(img)
@@ -490,7 +490,7 @@ def s_onecmd(img, lt, dur):
 
 def s_install(img, lt, dur):
     d = ImageDraw.Draw(img)
-    rows = ["鼠标设置 › 指针", "方案：Cartoon Cat", "应用 ✓"]
+    rows = ["榧犳爣璁剧疆 鈥?鎸囬拡", "鏂规锛欳artoon Cat", "搴旂敤 鉁?]
     for i, r in enumerate(rows):
         if lt < i * 0.4:
             continue
@@ -503,7 +503,7 @@ def s_tray(img, lt, dur):
     art = cur_render("person", 220)
     img.alpha_composite(art, (W - 420, H - 320))
     if lt > 0.5:
-        d.text((W - 640, H - 300), "托盘常驻 · 无窗口", font=f(F_CN, 32), fill=G2 + (210,))
+        d.text((W - 640, H - 300), "鎵樼洏甯搁┗ 路 鏃犵獥鍙?, font=f(F_CN, 32), fill=G2 + (210,))
 
 
 def s_repo(img, lt, dur):
@@ -528,7 +528,7 @@ def s_bridge(img, lt, dur):
     pass
 
 
-# --- 环形相册（复用 seg6 逻辑，简化）
+# --- 鐜舰鐩稿唽锛堝鐢?seg6 閫昏緫锛岀畝鍖栵級
 RING_ROLES = ["arrow", "help", "wait", "appstarting", "crosshair", "ibeam", "nwpen", "no",
               "sizeall", "sizens", "sizewe", "sizenwse", "sizenesw", "uparrow", "hand",
               "pin", "person"]
@@ -595,9 +595,9 @@ def s_big(img, lt, dur):
 
 def s_citations(img, lt, dur):
     d = ImageDraw.Draw(img)
-    lines = ["资料来源：Xerox Star (1981) · Apple Macintosh (1984)",
-             "Windows 95 沙漏图标 · Windows .cur / .ani 文件格式",
-             "画面为示意图 · CursorLab · MIT License"]
+    lines = ["璧勬枡鏉ユ簮锛歑erox Star (1981) 路 Apple Macintosh (1984)",
+             "Windows 95 娌欐紡鍥炬爣 路 Windows .cur / .ani 鏂囦欢鏍煎紡",
+             "鐢婚潰涓虹ず鎰忓浘 路 CursorLab 路 MIT License"]
     for i, ln in enumerate(lines):
         if lt < 0.2 + i * 0.5:
             continue
@@ -610,57 +610,57 @@ def s_end(img, lt, dur):
     put_cat(img, 0.34, cy=int(H * 0.26))
 
 
-# ---------------------------------------------------------------- 镜头表
+# ---------------------------------------------------------------- 闀滃ご琛?
 U = 2.14
 SHOTS = [
     # (start, dur, render, cn, en, act, big)
-    (0.00, U, s_arrow_in, "每天，你点它几千次", "every day, thousands of clicks", ("指针简史", "A brief history", 1), False),
-    (2.14, U, s_arrow_close, "可它四十年没变过", "unchanged for forty years", None, False),
-    (4.28, U, s_sysrow, "还是这个样子", "still the same", None, False),
-    (6.42, U, s_dim, "我想改", "I wanted to change it", None, False),
-    (8.56, 4.34, s_morph, "于是，我自己做了一只", "so I made one myself", None, False),
-    (12.90, U, s_cat_in, "一只猫，替掉了箭头", "a cat, instead of an arrow", None, False),
-    (15.04, U, s_title, "一只猫", "A Cat", ("一只猫", "A cat", 1), True),
-    (17.18, U, s_ref, "我想要一只黑猫", "I wanted a black cat", ("想法", "The idea", 2), False),
-    (19.32, U, s_words, "大眼睛 · 通体漆黑 · 猫爪", "big eyes · all black · paw", None, False),
-    (21.46, U, lambda i, l, d: s_version(i, l, d, 0), "第一版，太硬", "too hard", None, False),
-    (23.60, U, lambda i, l, d: s_version(i, l, d, 1), "第二版，太单薄", "too thin", None, False),
-    (25.74, U, lambda i, l, d: s_version(i, l, d, 2), "第三版，认不出", "unreadable", None, False),
-    (27.88, U, lambda i, l, d: s_version(i, l, d, 3), "第四版，对了", "the fourth one", None, False),
-    (30.02, U, s_closeup, "就它了", "that's the one", None, False),
-    (32.16, U, s_line, "返工四次，都是我一句话一句话说的", "four rounds, all by saying it", None, False),
-    (34.30, U, s_cmd, "我把它交给 AI", "I handed it to AI", ("做法", "How", 3), False),
-    (36.44, U, s_code, "画图、写代码、打包，它全包", "draw, code, package — all of it", None, False),
-    (38.58, U, s_split17, "一张图，变成一整套", "one image, a whole set", None, False),
-    (40.72, U, s_grid17, "十七个角色", "seventeen roles", None, False),
-    (42.86, U, s_sizes, "一套图，三种大小", "one set, three sizes", None, False),
-    (45.00, U, s_hotspot, "点得准，靠这个点", "accuracy lives in this dot", None, False),
-    (47.14, 2 * U, s_press3, "会回应你的手", "it answers your hand", None, False),
-    (51.42, U, s_onecmd, "一条命令，全部生成", "one command, the whole set", None, False),
-    (53.56, U, s_install, "两下装好", "installed in two clicks", None, False),
-    (55.70, U, s_tray, "开机就在，不占屏幕", "always there, no window", None, False),
-    (57.84, U, s_repo, "代码开源，网页能试", "open source, try it live", None, False),
-    (60.00, U, s_submit, "投给了国外的收录站", "submitted to a cursor archive", None, False),
-    (62.14, U, s_bridge, "从「想」，到「能用」", "from an idea to something you use", None, False),
-    (64.28, 6.42, s_ring, "十七个角色", "seventeen cursors", ("产品", "The set", 4), False),
-    (70.70, 2 * U, lambda i, l, d: s_ring(i, l, d, 0.6), "每一个都单独画过", "every one drawn by hand", None, False),
-    (74.98, 2 * U, lambda i, l, d: s_ring(i, l, d, 1.6), "同一套骨架", "one skeleton, seventeen faces", None, False),
-    (79.26, 2 * U, s_grid17, "十七个，一个不少", "seventeen, none missing", None, False),
-    (83.54, 2 * U, s_press3, "会回应你的手", "it answers your hand", None, False),
-    (87.82, 2 * U, s_desktop, "它就在你手边", "right under your hand", None, False),
-    (92.10, 2 * U, s_compare, "换掉它，只需要一个决定", "one decision and it's gone", None, False),
-    (96.38, 2 * U, s_end, "一只猫，从一个念头开始", "a cat, from a single thought", None, False),
-    (100.66, 2 * U, s_eye, "全程，我只说了我想要什么", "all I said was what I wanted", ("结语", "Epilogue", 6), False),
-    (104.94, U, s_line, "画、写代码、打包、发布，都是它做的", "draw, code, ship — it did it all", None, False),
-    (107.08, U, s_line, "我只做了三件事：想、看、说「不对」", "think, look, and say 'not quite'", None, False),
-    (109.22, U, s_line, "这就是 AI 时代的门槛", "that is the bar, now", None, False),
-    (111.36, 2 * U, s_big, "你不需要会做，你只需要想要", "you don't need the skill, only the want", None, True),
-    (115.64, 2 * U, s_citations, "CursorLab · MIT · 开源", "CursorLab · MIT · open source", None, False),
-    (119.92, TOTAL - 119.92, s_end, "一只猫，从一个念头开始", "an idea is enough", None, False),
+    (0.00, U, s_arrow_in, "姣忓ぉ锛屼綘鐐瑰畠鍑犲崈娆?, "every day, thousands of clicks", ("鎸囬拡绠€鍙?, "A brief history", 1), False),
+    (2.14, U, s_arrow_close, "鍙畠鍥涘崄骞存病鍙樿繃", "unchanged for forty years", None, False),
+    (4.28, U, s_sysrow, "杩樻槸杩欎釜鏍峰瓙", "still the same", None, False),
+    (6.42, U, s_dim, "鎴戞兂鏀?, "I wanted to change it", None, False),
+    (8.56, 4.34, s_morph, "浜庢槸锛屾垜鑷繁鍋氫簡涓€鍙?, "so I made one myself", None, False),
+    (12.90, U, s_cat_in, "涓€鍙尗锛屾浛鎺変簡绠ご", "a cat, instead of an arrow", None, False),
+    (15.04, U, s_title, "涓€鍙尗", "A Cat", ("涓€鍙尗", "A cat", 1), True),
+    (17.18, U, s_ref, "鎴戞兂瑕佷竴鍙粦鐚?, "I wanted a black cat", ("鎯虫硶", "The idea", 2), False),
+    (19.32, U, s_words, "澶х溂鐫?路 閫氫綋婕嗛粦 路 鐚埅", "big eyes 路 all black 路 paw", None, False),
+    (21.46, U, lambda i, l, d: s_version(i, l, d, 0), "绗竴鐗堬紝澶‖", "too hard", None, False),
+    (23.60, U, lambda i, l, d: s_version(i, l, d, 1), "绗簩鐗堬紝澶崟钖?, "too thin", None, False),
+    (25.74, U, lambda i, l, d: s_version(i, l, d, 2), "绗笁鐗堬紝璁や笉鍑?, "unreadable", None, False),
+    (27.88, U, lambda i, l, d: s_version(i, l, d, 3), "绗洓鐗堬紝瀵逛簡", "the fourth one", None, False),
+    (30.02, U, s_closeup, "灏卞畠浜?, "that's the one", None, False),
+    (32.16, U, s_line, "杩斿伐鍥涙锛岄兘鏄垜涓€鍙ヨ瘽涓€鍙ヨ瘽璇寸殑", "four rounds, all by saying it", None, False),
+    (34.30, U, s_cmd, "鎴戞妸瀹冧氦缁?AI", "I handed it to AI", ("鍋氭硶", "How", 3), False),
+    (36.44, U, s_code, "鐢诲浘銆佸啓浠ｇ爜銆佹墦鍖咃紝瀹冨叏鍖?, "draw, code, package 鈥?all of it", None, False),
+    (38.58, U, s_split17, "涓€寮犲浘锛屽彉鎴愪竴鏁村", "one image, a whole set", None, False),
+    (40.72, U, s_grid17, "鍗佷竷涓鑹?, "seventeen roles", None, False),
+    (42.86, U, s_sizes, "涓€濂楀浘锛屼笁绉嶅ぇ灏?, "one set, three sizes", None, False),
+    (45.00, U, s_hotspot, "鐐瑰緱鍑嗭紝闈犺繖涓偣", "accuracy lives in this dot", None, False),
+    (47.14, 2 * U, s_press3, "浼氬洖搴斾綘鐨勬墜", "it answers your hand", None, False),
+    (51.42, U, s_onecmd, "涓€鏉″懡浠わ紝鍏ㄩ儴鐢熸垚", "one command, the whole set", None, False),
+    (53.56, U, s_install, "涓や笅瑁呭ソ", "installed in two clicks", None, False),
+    (55.70, U, s_tray, "寮€鏈哄氨鍦紝涓嶅崰灞忓箷", "always there, no window", None, False),
+    (57.84, U, s_repo, "浠ｇ爜寮€婧愶紝缃戦〉鑳借瘯", "open source, try it live", None, False),
+    (60.00, U, s_submit, "鎶曠粰浜嗗浗澶栫殑鏀跺綍绔?, "submitted to a cursor archive", None, False),
+    (62.14, U, s_bridge, "浠庛€屾兂銆嶏紝鍒般€岃兘鐢ㄣ€?, "from an idea to something you use", None, False),
+    (64.28, 6.42, s_ring, "鍗佷竷涓鑹?, "seventeen cursors", ("浜у搧", "The set", 4), False),
+    (70.70, 2 * U, lambda i, l, d: s_ring(i, l, d, 0.6), "姣忎竴涓兘鍗曠嫭鐢昏繃", "every one drawn by hand", None, False),
+    (74.98, 2 * U, lambda i, l, d: s_ring(i, l, d, 1.6), "鍚屼竴濂楅鏋?, "one skeleton, seventeen faces", None, False),
+    (79.26, 2 * U, s_grid17, "鍗佷竷涓紝涓€涓笉灏?, "seventeen, none missing", None, False),
+    (83.54, 2 * U, s_press3, "浼氬洖搴斾綘鐨勬墜", "it answers your hand", None, False),
+    (87.82, 2 * U, s_desktop, "瀹冨氨鍦ㄤ綘鎵嬭竟", "right under your hand", None, False),
+    (92.10, 2 * U, s_compare, "鎹㈡帀瀹冿紝鍙渶瑕佷竴涓喅瀹?, "one decision and it's gone", None, False),
+    (96.38, 2 * U, s_end, "涓€鍙尗锛屼粠涓€涓康澶村紑濮?, "a cat, from a single thought", None, False),
+    (100.66, 2 * U, s_eye, "鍏ㄧ▼锛屾垜鍙浜嗘垜鎯宠浠€涔?, "all I said was what I wanted", ("缁撹", "Epilogue", 6), False),
+    (104.94, U, s_line, "鐢汇€佸啓浠ｇ爜銆佹墦鍖呫€佸彂甯冿紝閮芥槸瀹冨仛鐨?, "draw, code, ship 鈥?it did it all", None, False),
+    (107.08, U, s_line, "鎴戝彧鍋氫簡涓変欢浜嬶細鎯炽€佺湅銆佽銆屼笉瀵广€?, "think, look, and say 'not quite'", None, False),
+    (109.22, U, s_line, "杩欏氨鏄?AI 鏃朵唬鐨勯棬妲?, "that is the bar, now", None, False),
+    (111.36, 2 * U, s_big, "浣犱笉闇€瑕佷細鍋氾紝浣犲彧闇€瑕佹兂瑕?, "you don't need the skill, only the want", None, True),
+    (115.64, 2 * U, s_citations, "CursorLab 路 MIT 路 寮€婧?, "CursorLab 路 MIT 路 open source", None, False),
+    (119.92, TOTAL - 119.92, s_end, "涓€鍙尗锛屼粠涓€涓康澶村紑濮?, "an idea is enough", None, False),
 ]
 
 
-# ---------------------------------------------------------------- 帧
+# ---------------------------------------------------------------- 甯?
 def frame(i):
     t = i / FPS
     img = BG.convert("RGBA").copy()
