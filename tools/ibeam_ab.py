@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PIL import Image, ImageDraw, ImageFont
 
 from cursorlab import cartoon
-from cursorlab.cartoon import BODY, CREAM, Canvas
+from cursorlab.cartoon import BODY, Canvas
 
 FONT = r"C:\Windows\Fonts\msyh.ttc"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_ibeam_ab.png")

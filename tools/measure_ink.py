@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PIL import Image, ImageDraw, ImageFont
 
 from cursorlab import cartoon
-from cursorlab.cartoon import Canvas
 
 DPI_SCALE = 1.5          # 144 DPI
 LAYER = 48               # Windows 在 150% 下取的层

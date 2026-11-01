@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cursorlab"
+version = "2.1.0"
+description = "CursorLab —— 自己画、自己打包的 Windows 鼠标指针工具链（.cur/.ani 编码器 + 主题构建）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = ["cursor", "cur", "ani", "windows", "icons", "pillow"]
+dependencies = ["Pillow>=9.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.5", "build>=1"]
+
+[project.urls]
+Homepage = "https://github.com/eute000/cursor-lab"
+
+[project.scripts]
+cursorlab-build = "cursorlab.build:main"
+cursorlab-theme = "cursorlab.theme:main"
+cursorlab-verify = "cursorlab.verify:main"
+
+[tool.setuptools]
+packages = ["cursorlab"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# 这个仓库的行宽和 % 格式化是有意为之，只挑真正会出错的规则
+select = ["E9", "F"]

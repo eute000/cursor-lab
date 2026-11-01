@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image, ImageDraw, ImageFont
 
-from cursorlab import cartoon
 from cursorlab.cartoon import Canvas, cat, layer, stamp, sym_cycle, sym_tri
 
 FONT = r"C:\Windows\Fonts\msyh.ttc"
