@@ -17,7 +17,6 @@ import ctypes
 import os
 import sys
 import time
-from ctypes import wintypes
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

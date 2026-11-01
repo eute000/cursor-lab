@@ -435,7 +435,11 @@ EXTRA = {
 
 
 def render(name, size, frame=0):
-    spec = SPRITES.get(name) or EXTRA[name]
+    """按造型名渲染一帧 RGBA 图（size×size）。"""
+    spec = SPRITES.get(name) or EXTRA.get(name)
+    if spec is None:
+        raise KeyError("没有这个造型: %r（可用：%s）"
+                       % (name, ", ".join(sorted(list(SPRITES) + list(EXTRA)))))
     c = Canvas(size)
     spec["fn"](c, frame)
     return c.img.resize((size, size), Image.LANCZOS)

@@ -100,8 +100,22 @@ python tools/make_theme.py --name my-cat --src assets/my-cat
 ```
 
 自动抠纯色背景、加 1px 白描边、生成多尺寸（32/48/64）、打包成 `dist/my-cat.zip`。
+装好包以后也可以直接 `cursorlab-theme --name my-cat --src assets/my-cat`（同一条命令）。
+
+> 动画帧按**数字顺序**排：`wait_2.png` 排在 `wait_10.png` 前面（不是按字符串排）。
 
 **3. 校准点击位置（热点）** —— 打开 `tools/hotspot.html`，指到 `out/my-cat/png/`，每张图点一下"点击生效点"，把导出的 JSON 贴回 `themes/my-cat/theme.json` 的 `hot`。
+也可以在生成时直接给：`--hot arrow=2,2 hand=16,10.4`（坐标按 32 格设计网格记，越界会直接报错）。
+
+**3.5 体检一下再装**（可选，但建议）
+
+```powershell
+python -m cursorlab.verify out/my-cat
+```
+
+它会逐个字节检查 `.cur` / `.ani`：目录项长度、DIB 头、热点是否落在图像内、
+RIFF 长度、`anih` 的帧数/步数与实际 `icon` 块是否对得上。有问题退出码 1，
+直接接在 CI 里：`python -m cursorlab.build --verify`。
 
 **4. 装上去**
 
@@ -168,28 +182,65 @@ RIFF <size> ACON
 3. 注册表「默认值」的名字是**空字符串**，`ConvertFrom-Json` 遇到空属性名直接报错；备份时改存 `__default__`，读取用 `JavaScriptSerializer`。
 </details>
 
+<details>
+<summary><b>抠背景不能"见到接近白就抠"，要从四条边泛洪</b></summary>
+
+最早的写法是遍历所有像素：颜色接近背景色就设成透明。白底素材里猫的白眼睛、
+高光、镂空跟背景色一模一样，于是被一起抠穿 —— 装到深色壁纸上就是一个透明的洞。
+
+现在先做一张"接近背景色"的二值图，只从画布边缘泛洪，被连通到的才算背景；
+图像内部的同色区域一律保留。
+</details>
+
+<details>
+<summary><b>编码器不会自己发现坏文件，所以单独写了 verify</b></summary>
+
+`cur_bytes()` / `ani_bytes()` 只负责把字节拼出来，长度算错、热点跑到图像外、
+RIFF 长度差 4 个字节，它们照样安安静静返回一段 bytes。出错的表现是
+"装到 Windows 上指针变成默认箭头" —— 在 Linux CI 里根本看不见。
+
+`cursorlab.verify` 把生成的文件重新当字节读一遍（目录项、DIB 头、AND 掩码、
+热点、`anih` 计数、`seq`/`rate` 长度、chunk 对齐），CI 里构建完跑一次就能拦下来。
+</details>
+
 ## 目录结构
 
 ```
-cursorlab/            核心库
+cursorlab/            核心库（可 pip install，三个命令行入口）
 ├── encode.py         .cur / .ani 二进制编码（DIB、热点、RIFF）
 ├── cartoon.py        卡通小黑猫 17 个造型（矢量绘制 + 超采样）
-└── build.py          主题构建、预览图、zip 打包
+├── build.py          主题构建、预览图、zip 打包
+├── theme.py          任意 png → 主题（抠图/描边/多尺寸）
+├── verify.py         .cur / .ani 结构体检
+└── __init__.py       公开 API + 版本号
 tools/
-├── make_theme.py     任意 png → 主题（抠图/描边/多尺寸/打包）
+├── make_theme.py     老入口，转调 cursorlab.theme（命令不变）
 ├── hotspot.html      点点鼠标标热点，导出 JSON
 └── preview.py        出预览图（4 倍放大 + 1:1 真实尺寸）
 themes/               图片主题（themes/<名>/theme.json + png）
 docs/                 Pages 落地页 + 每轮设计稿
 install.ps1           安装（写 HKCU + 立即生效 + 自动备份）
 uninstall.ps1         还原
-tests/test_encode.py  编码器自测（CI 里跑）
+tests/                81 个用例（编码器 / 体检 / 构建 / 主题 / 造型）
 ```
 
 构建全部主题：
 
 ```powershell
-python -m cursorlab.build
+python -m cursorlab.build                  # 出光标 + zip
+python -m cursorlab.build --list           # 看有哪些主题
+python -m cursorlab.build --verify         # 构建完顺手体检，有问题退出码 1
+python -m cursorlab.verify out\cartoon-cat # 单独体检一个目录或文件
+```
+
+装成包用（可选，需要有 Python 环境）：
+
+```powershell
+pip install -e ".[dev]"
+cursorlab-build --verify
+cursorlab-theme --name my-cat --src assets\my-cat
+cursorlab-verify out\cartoon-cat
+python -m pytest                           # 81 个用例，约 10 秒
 ```
 
 ## 版本
@@ -197,7 +248,8 @@ python -m cursorlab.build
 | 版本 | 内容 |
 |---|---|
 | v0.1.0 | 像素风小黑猫（已归档，仍可在 Releases 下载） |
-| **v2.0.0** | 卡通风重做：大头 + 超大白眼 + 分层米白描边 + 空心三角指针 |
+| v2.0.0 | 卡通风重做：大头 + 超大白眼 + 分层米白描边 + 空心三角指针 |
+| **v2.1.0** | 结构体检 `cursorlab.verify`、主题生成收进包里（`cursorlab-theme`）、`pyproject.toml` + 三个命令行入口、81 个用例；修掉自定义主题整条路走不通、抠背景抠穿白眼睛、动图帧按字符串排序、非正方素材被压扁、热点不校验不报错、预览图右边留白 |
 
 ## License
 
