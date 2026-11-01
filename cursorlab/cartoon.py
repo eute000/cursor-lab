@@ -158,14 +158,13 @@ def sym_cross(c):
 
 
 def sym_ibeam(c):
-    """I 型：深色本体 14.3 格（杆 9.9→22.1、笔画 2.1），144DPI 实显 21px。
+    """角标位的 I 型（和 ▷ / ？ 同一个槽位），深色本体 8.7 格高。
 
-    尺寸迭代史（深色本体）：36 → 21 → 19 → 16 → 18 → 19 → **21px**。
-    用户："再粗一点、加到 21px"——高度和笔画同时加，但只加这一个角色。
+    之前是居中的大 I；用户要求统一版式：猫仍在右下，左上角标位换成 I。
     """
-    c.line([(16, 9.9), (16, 22.1)], fill=BODY, w=2.1, caps=False)
-    c.line([(12.5, 9.9), (19.5, 9.9)], fill=BODY, w=2.1)
-    c.line([(12.5, 22.1), (19.5, 22.1)], fill=BODY, w=2.1)
+    c.line([(6.2, 2.8), (6.2, 9.6)], fill=BODY, w=1.9, caps=False)
+    c.line([(4.0, 2.8), (8.4, 2.8)], fill=BODY, w=1.9)
+    c.line([(4.0, 9.6), (8.4, 9.6)], fill=BODY, w=1.9)
 
 
 def sym_pen(c):
@@ -287,6 +286,7 @@ def draw_crosshair(c, f=0):
 
 def draw_ibeam(c, f=0):
     stamp(c, layer(c.size, sym_ibeam))
+    stamp(c, layer(c.size, cat, 0.73, 7.6, 6.4))
 
 
 def draw_nwpen(c, f=0):
@@ -347,7 +347,7 @@ SPRITES = {
     "appstarting": dict(fn=draw_appstarting, hot=(16, 16),   frames=8),
     "wait":        dict(fn=draw_wait,        hot=(2.3, 2.3), frames=8),
     "crosshair":   dict(fn=draw_crosshair,   hot=(16, 16),   frames=1),
-    "ibeam":       dict(fn=draw_ibeam,       hot=(16, 16),   frames=1),
+    "ibeam":       dict(fn=draw_ibeam,       hot=(6.2, 6.2), frames=1),
     "nwpen":       dict(fn=draw_nwpen,       hot=(3.4, 3.4), frames=1),
     "no":          dict(fn=draw_no,          hot=(16, 16),   frames=1),
     "sizens":      dict(fn=draw_size_ns,     hot=(16, 16),   frames=1),
