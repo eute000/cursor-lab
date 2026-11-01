@@ -1,0 +1,75 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖
+        run: pip install pillow
+
+      - name: 编码器自测
+        run: python tests/test_encode.py
+
+      - name: 构建所有主题
+        run: python -m cursorlab.build
+
+      - name: 上传 zip 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: cursor-packs
+          path: dist/*.zip
+
+      - name: 打 tag 时发 Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+
+  pages:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - run: python -m cursorlab.build
+
+      - name: 组装站点（页面 + 真实 .cur 文件）
+        run: |
+          mkdir -p site/pixel-cat
+          cp docs/index.html site/index.html
+          cp out/pixel-cat/*.cur out/pixel-cat/*.ani site/pixel-cat/
+          cp out/pixel-cat/preview.png site/pixel-cat/preview.png
+          echo "curs.or" > site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

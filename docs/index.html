@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CursorLab · 像素小猫鼠标指针</title>
+<style>
+  :root{
+    --bg:#0e1014; --card:#171a21; --line:#272c36; --fg:#e9ecf3; --mut:#8b93a4;
+    --pink:#ff8aaa; --gold:#ffd058;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 50% -10%, #1b2029 0%, var(--bg) 60%);
+    color:var(--fg); font:15px/1.7 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    padding:56px 24px 80px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  .hero{text-align:center;margin-bottom:44px}
+  h1{font-size:34px;margin:0 0 10px;letter-spacing:.5px}
+  h1 span{color:var(--pink)}
+  .hero p{color:var(--mut);margin:0 auto;max-width:640px}
+  .pills{display:flex;gap:8px;justify-content:center;margin:22px 0 0;flex-wrap:wrap}
+  .pill{font-size:12px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;color:var(--mut)}
+  .btn{display:inline-block;margin-top:26px;padding:11px 24px;border-radius:11px;
+       background:var(--pink);color:#2a1016;font-weight:700;text-decoration:none}
+  .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);margin-left:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:14px;margin-top:14px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .stage{height:82px;display:flex;align-items:center;justify-content:center;border-radius:10px;
+         background:#101318;font-size:12px;color:var(--mut);margin-bottom:9px}
+  .cell b{display:block;font-size:13px}
+  .cell i{font-style:normal;color:var(--mut);font-size:11px}
+  h2{font-size:18px;margin:52px 0 6px}
+  .sub{color:var(--mut);margin:0 0 18px;font-size:13px}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+      overflow:auto;font:13px/1.6 Consolas,ui-monospace,monospace;color:#a5e8ff}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .box h3{margin:0 0 8px;font-size:14px}
+  .box p{margin:0;color:var(--mut);font-size:13px}
+  footer{margin-top:56px;text-align:center;color:var(--mut);font-size:12px}
+  a{color:#8fe3ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🐾 Cursor<span>Lab</span> 像素小猫指针</h1>
+    <p>黑猫头当箭头、猫爪当链接光标、大眼睛、耳朵支棱着。下面每一格都能真实悬停 —— 页面加载的就是打包好的 .cur 文件。</p>
+    <div class="pills">
+      <span class="pill">17 个角色</span>
+      <span class="pill">32 / 64 px</span>
+      <span class="pill">2 个动画指针</span>
+      <span class="pill">无需管理员权限</span>
+      <span class="pill">一键还原</span>
+    </div>
+    <a class="btn" href="https://github.com/eute000/cursor-lab/releases">下载 .zip</a>
+    <a class="btn ghost" href="https://github.com/eute000/cursor-lab">看源码</a>
+  </div>
+
+  <h2>悬停试一下</h2>
+  <p class="sub">.ani 动画指针在浏览器里不播动画（Windows 里会转），这里显示第一帧。</p>
+  <div class="grid" id="grid"></div>
+
+  <h2>安装</h2>
+  <p class="sub">解压发行包，双击 <code>安装.bat</code>；或仓库里执行下面这条。</p>
+  <pre>powershell -ExecutionPolicy Bypass -File install.ps1</pre>
+  <p class="sub">还原：<code>powershell -ExecutionPolicy Bypass -File uninstall.ps1</code></p>
+
+  <h2>它是怎么来的</h2>
+  <div class="cols">
+    <div class="box">
+      <h3>① 像素画</h3>
+      <p>所有造型在 32×32 网格上按整数像素排，绝不做抗锯齿，最后统一加 1px 白边 —— 暗色桌面也看得见。</p>
+    </div>
+    <div class="box">
+      <h3>② 二进制编码</h3>
+      <p>自己拼 .cur：BITMAPINFOHEADER + 自下而上的 BGRA + AND 掩码，热点塞进目录项的 planes/bitCount 字段。</p>
+    </div>
+    <div class="box">
+      <h3>③ 动画</h3>
+      <p>.ani 是 RIFF/ACON：anih 头 + rate + seq + LIST('fram') 里 8 帧完整 .cur。</p>
+    </div>
+    <div class="box">
+      <h3>④ 安装</h3>
+      <p>只写 HKCU\Control Panel\Cursors，安装前自动备份，随时一键还原成 Windows Aero。</p>
+    </div>
+  </div>
+
+  <h2>换成自己的图</h2>
+  <pre>python tools/make_theme.py --name anime-cat --src assets/anime-cat</pre>
+  <p class="sub">17 张 png 按角色名命名丢进文件夹 → 自动抠背景、加描边、多尺寸、打包 zip。热点用 <code>tools/hotspot.html</code> 点一下就好。</p>
+
+  <footer>
+    MIT License · 用 Python + Pillow 从零实现，不依赖任何第三方指针工具
+  </footer>
+</div>
+
+<script>
+const ROLES = [
+  ["arrow","猫头箭头","正常指向"], ["help","猫头问号","帮助"], ["appstarting","猫头+星星","后台启动"],
+  ["wait","猫爪+星星","系统忙"], ["crosshair","十字+肉垫","精确定位"], ["ibeam","I 型杆","文本输入"],
+  ["nwpen","猫爪笔","手写"], ["no","禁行牌","禁止"], ["sizens","上下箭头","调整高度"],
+  ["sizewe","左右箭头","调整宽度"], ["sizenwse","斜向箭头","左上↔右下"], ["sizenesw","斜向箭头","右上↔左下"],
+  ["sizeall","四向箭头","移动"], ["uparrow","猫耳箭头","向上"], ["hand","猫爪肉垫","链接/悬停"],
+  ["pin","猫爪图钉","定位"], ["person","猫猫头像","用户"]
+];
+const ANI = new Set(["wait","appstarting"]);
+document.getElementById("grid").innerHTML = ROLES.map(([k,name,desc]) => `
+  <div class="cell">
+    <div class="stage" style="cursor:url('pixel-cat/${k}.${ANI.has(k)?"ani":"cur"}') 4 4, auto">悬停我</div>
+    <b>${name}</b><i>${k}</i>
+  </div>`).join("");
+</script>
+</body>
+</html>
